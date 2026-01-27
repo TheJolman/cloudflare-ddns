@@ -128,24 +128,6 @@ sudo systemctl enable cloudflare-ddns.timer   # resume automatic runs
 sudo make uninstall
 ```
 
-## How the Script Works
-
-1. **Validation**: Checks that `$CREDENTIALS_DIRECTORY` exists
-2. **Load Credentials**: Reads decrypted credentials from systemd
-3. **Fetch Current IP**: Uses IPInfo API (v4.api.ipinfo.io / v6.api.ipinfo.io)
-4. **Check DNS Record**: Queries Cloudflare API for current DNS record
-5. **Compare**: If IPs match, skip update
-6. **Update**: If IPs differ, PATCH the DNS record with new IP
-7. **Repeat**: Does this for both IPv4 and IPv6
-
-## Security Considerations
-
-1. **Encrypted at Rest**: Credentials are encrypted using TPM2 or system key
-2. **Minimal Permissions**: Files are 600 (root only)
-3. **Dynamic User**: Service runs as `DynamicUser=yes`, not root
-4. **No Disk Storage**: Decrypted credentials only exist in memory
-5. **Process Isolation**: Credentials only visible to the service process
-
 ## Dependencies
 
 - `systemd` with credentials support (systemd ≥ 250)
