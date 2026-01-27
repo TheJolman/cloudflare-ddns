@@ -7,7 +7,7 @@ type=oneshot
 
 LoadCredentialEncrypted=CF_ZONE_ID:/etc/cloudflare-ddns/CF_ZONE_ID
 LoadCredentialEncrypted=CF_RECORD_ID_4:/etc/cloudflare-ddns/CF_RECORD_ID_4
-LoadCredentialEncrypted=CF_RECORD_ID_6:/etc/cloudflare-ddns/CF_RECORD_ID_4
+LoadCredentialEncrypted=CF_RECORD_ID_6:/etc/cloudflare-ddns/CF_RECORD_ID_6
 LoadCredentialEncrypted=CF_API_TOKEN:/etc/cloudflare-ddns/CF_API_TOKEN
 LoadCredentialEncrypted=IPINFO_API_TOKEN:/etc/cloudflare-ddns/IPINFO_API_TOKEN
 
