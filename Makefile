@@ -51,8 +51,10 @@ install:
 	install -m 644 -o root -g root $(service_src) $(service_dest)
 	install -m 644 -o root -g root $(timer_src) $(timer_dest)
 
+	systemctl daemon-reload
+	systemctl enable --now cloudflare-ddns.timer
 	@echo "Service installed and started."
-	@echo "Run 'sudo journalctl -u cloudflare-ddns.service' to check it's status."
+	@echo "Run 'sudo journalctl -u cloudflare-ddns.service' to check its status."
 
 uninstall:
 	systemctl disable --now $(timer_src) || true
