@@ -6,6 +6,17 @@ log_error() {
     echo "[$(date + '%Y-%m-%dT%H:%M:%S')] ERROR: $1" >&2
 }
 
+if [[ -z "$CREDENTIALS_DIRECTORY" ]]; then
+    log_error "CREDENTIALS_DIRECTORY not found. Run this via systemd."
+    exit 1
+fi
+
+# CF_ZONE_ID=
+# CF_RECORD_ID_4=
+# CF_RECORD_ID_6=
+# CF_API_TOKEN=
+# IPINFO_API_TOKEN=
+
 update_dns_record() {
     local type=$1 # 'v4' | 'v6'
     local record_id=$2
