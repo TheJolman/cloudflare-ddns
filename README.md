@@ -5,6 +5,12 @@ This repo contains everything you need to get a simple DDNS service running for 
 ## Quick Start
 
 1. Ensure you have `xh` and `jq` installed and are on a system with systemd.
+2. Create `A` and `AAAA` records on the Cloudflare dash or with the API. These can have any value for now.
+1. Obtain the following:
+   - Record ID for aforementioned `A` and `AAAA` records. You can find these with `list_records.sh` or by manually using the Cloudflare API.
+   - Cloudflare zone ID for your domain (you can find this in the Cloudflare dash).
+   - Cloudflare Account API token with the Zone.DNS permissions.
+   - An ipinfo.io API key (this is needed since we're grabbing both IPv4 and IPv6 IPs)
 1. Run `sudo make set-secrets` and paste the required variables.
 1. Run `sudo make install`.
 
