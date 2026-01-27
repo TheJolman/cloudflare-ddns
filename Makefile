@@ -1,0 +1,64 @@
+script_src = cloudflare-ddns
+service_src = cloudflare-ddns.service
+timer_src = cloudflare-ddns.timer
+
+bin_dest = /usr/local/bin/
+systemd_dest = /etc/systemd/system/
+secret_dest = /etc/cloudflare-ddns/
+
+.PHONY: install uninstall
+
+all:
+	@echo "Usage: sudo make [ set-secrets | install | uninstall ]"
+
+set-secrets:
+	@echo -n "Enter the value for CF_ZONE_ID: "
+	read CF_ZONE_ID
+	echo -n "$CF_ZONE_ID" systemd-creds encrypt --name=CF_ZONE_ID - CF_ZONE_ID.cred
+
+	@echo -n "Enter the value for CF_RECORD_ID_4: "
+	read CF_RECORD_ID_4
+	echo -n "$CF_RECORD_ID_4" systemd-creds encrypt --name=CF_RECORD_ID_4 - CF_RECORD_ID_4.cred
+
+	@echo -n "Enter the value for CF_RECORD_ID_6: "
+	read CF_RECORD_ID_6
+	echo -n "$CF_RECORD_ID_6" systemd-creds encrypt --name=CF_RECORD_ID_6 - CF_RECORD_ID_6.cred
+
+	@echo -n "Enter the value for CF_API_TOKEN: "
+	read CF_API_TOKEN
+	echo -n "$CF_API_TOKEN" systemd-creds encrypt --name=CF_API_TOKEN - CF_API_TOKEN.cred
+
+	@echo -n "Enter the value for IPINFO_API_TOKEN: "
+	read IPINFO_API_TOKEN
+	echo -n "$IPINFO_API_TOKEN" systemd-creds encrypt --name=IPINFO_API_TOKEN - IPINFO_API_TOKEN.cred
+
+
+install:
+	# Secrets
+	install -d -m 700 /etc/cloudflare-ddns
+	install -m 600 -o root -g root CF_ZONE_ID.cred $(secret_dest)
+	install -m 600 -o root -g root CF_RECORD_ID_4.cred $(secret_dest)
+	install -m 600 -o root -g root CF_RECORD_ID_6.cred $(secret_dest)
+	install -m 600 -o root -g root CF_API_TOKEN.cred $(secret_dest)
+	install -m 600 -o root -g root IPINFO_API_TOKEN.cred $(secret_dest)
+
+	# Binary
+	install -m 755 -o root -g root $(script_src) $(bin_dest)
+
+	# Systemd units
+	install -m 644 -o root -g root $(service_src) $(service_dest)
+	install -m 644 -o root -g root $(timer_src) $(timer_dest)
+
+	@echo "Service installed and started."
+	@echo "Run `sudo journalctl -u cloudflare-ddns.service` to check it's status."
+
+uninstall:
+	systemctl disable --now $(timer_src) || true
+
+	rm -f $(bin_dest)$(script_src)
+	rm -f $(service_dest)$(service_dest)
+	rm -f $(timer_dest)$(timer_dest)
+	rm -rf $(secret_dest)
+
+	systemctl daemon-reload
+	@echo "Uninstalled and cleaned up."
