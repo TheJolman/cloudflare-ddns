@@ -3,7 +3,7 @@
 set -euo pipefail
 
 log_error() {
-    echo "[$(date + '%Y-%m-%dT%H:%M:%S')] ERROR: $1" >&2
+    echo "ERROR: $1" >&2
 }
 
 if [[ -z "$CREDENTIALS_DIRECTORY" ]]; then
