@@ -48,8 +48,8 @@ install:
 	install -m 755 -o root -g root $(script_src) $(bin_dest)
 
 	# Systemd units
-	install -m 644 -o root -g root $(service_src) $(service_dest)
-	install -m 644 -o root -g root $(timer_src) $(timer_dest)
+	install -m 644 -o root -g root $(service_src) $(systemd_dest)
+	install -m 644 -o root -g root $(timer_src) $(systemd_dest)
 
 	systemctl daemon-reload
 	systemctl enable --now cloudflare-ddns.timer
