@@ -1,9 +1,186 @@
 # Cloudflare DDNS Service
 
-This repo contains everything you need to get a simple DDNS service running for
-your home server using the Cloudflare API.
+This repo contains everything you need to get a simple DDNS service running for your home server using the Cloudflare API.
 
-## Usage
+## Quick Start
 
+1. Ensure you have `xh` and `jq` installed and are on a system with systemd.
 1. Run `sudo make set-secrets` and paste the required variables.
-1. Run `make install`.
+1. Run `sudo make install`.
+
+## Overview
+
+This service automatically updates Cloudflare DNS records with your current public IPv4 and IPv6 addresses. It uses systemd's encrypted credentials feature to securely store API tokens and identifiers.
+
+## Architecture
+
+### Components
+
+1. **cloudflare-ddns** - Bash script that fetches current IP and updates DNS records
+2. **cloudflare-ddns.service** - Systemd service unit (oneshot)
+3. **cloudflare-ddns.timer** - Systemd timer (runs every 2 minutes)
+4. **Encrypted Credentials** - Stored in `/etc/cloudflare-ddns/`
+
+### How Systemd Credentials Work
+
+Systemd's `LoadCredentialEncrypted=` directive:
+- Decrypts credentials at service start time
+- Makes them available only to the service process
+- Exposes them via `$CREDENTIALS_DIRECTORY` environment variable
+- Each credential is a separate file in that directory
+
+## Credential Flow
+
+1. **Encryption** (`make set-secrets`):
+   ```bash
+   echo -n "value" | systemd-creds encrypt --name=NAME - OUTPUT_FILE
+   ```
+   Creates encrypted credential files in the current directory.
+
+2. **Installation** (`make install`):
+   Files are copied to `/etc/cloudflare-ddns/` with restrictive permissions (600, root:root).
+
+3. **Service Start**:
+   ```
+   LoadCredentialEncrypted=CF_ZONE_ID:/etc/cloudflare-ddns/CF_ZONE_ID
+   ```
+   Systemd decrypts and makes available at `$CREDENTIALS_DIRECTORY/CF_ZONE_ID`.
+
+4. **Script Usage**:
+   ```bash
+   CF_ZONE_ID=$(cat "$CREDENTIALS_DIRECTORY/CF_ZONE_ID")
+   ```
+   Script reads plaintext credentials from the temporary directory.
+
+## Required Credentials
+
+| Variable | Purpose | How to Get |
+|----------|---------|------------|
+| `CF_ZONE_ID` | Cloudflare Zone ID | Dashboard → Domain → Overview → Zone ID |
+| `CF_RECORD_ID_4` | IPv4 DNS Record ID | Use `list_records.sh` or API |
+| `CF_RECORD_ID_6` | IPv6 DNS Record ID | Use `list_records.sh` or API |
+| `CF_API_TOKEN` | Cloudflare API Token | Dashboard → Profile → API Tokens → Create Token |
+| `IPINFO_API_TOKEN` | IPInfo API Token | https://ipinfo.io/account/token |
+
+### API Token Permissions
+
+The Cloudflare API token needs:
+- **Zone.DNS** - Edit permissions
+- **Zone Resources** - Include specific zones
+
+## Installation
+
+### 1. Encrypt Secrets
+```bash
+sudo make set-secrets
+```
+This creates encrypted credential files in the current directory.
+
+### 2. Install Service
+```bash
+sudo make install
+```
+This:
+- Copies encrypted credentials to `/etc/cloudflare-ddns/`
+- Installs the script to `/usr/local/bin/`
+- Installs systemd units to `/etc/systemd/system/`
+- Enables and starts the timer
+
+### 3. Verify
+```bash
+sudo journalctl -u cloudflare-ddns.service -f
+```
+
+## Management
+
+### Check Status
+```bash
+systemctl status cloudflare-ddns.timer
+systemctl status cloudflare-ddns.service
+```
+
+### View Logs
+```bash
+journalctl -u cloudflare-ddns.service
+journalctl -u cloudflare-ddns.service -f  # follow
+journalctl -u cloudflare-ddns.service --since "1 hour ago"
+```
+
+### Manual Trigger
+```bash
+sudo systemctl start cloudflare-ddns.service
+```
+
+### Disable/Enable
+```bash
+sudo systemctl disable cloudflare-ddns.timer  # stop automatic runs
+sudo systemctl enable cloudflare-ddns.timer   # resume automatic runs
+```
+
+### Uninstall
+```bash
+sudo make uninstall
+```
+
+## How the Script Works
+
+1. **Validation**: Checks that `$CREDENTIALS_DIRECTORY` exists
+2. **Load Credentials**: Reads decrypted credentials from systemd
+3. **Fetch Current IP**: Uses IPInfo API (v4.api.ipinfo.io / v6.api.ipinfo.io)
+4. **Check DNS Record**: Queries Cloudflare API for current DNS record
+5. **Compare**: If IPs match, skip update
+6. **Update**: If IPs differ, PATCH the DNS record with new IP
+7. **Repeat**: Does this for both IPv4 and IPv6
+
+## Security Considerations
+
+1. **Encrypted at Rest**: Credentials are encrypted using TPM2 or system key
+2. **Minimal Permissions**: Files are 600 (root only)
+3. **Dynamic User**: Service runs as `DynamicUser=yes`, not root
+4. **No Disk Storage**: Decrypted credentials only exist in memory
+5. **Process Isolation**: Credentials only visible to the service process
+
+## Dependencies
+
+- `systemd` with credentials support (systemd ≥ 250)
+- `xh` - HTTP client (or replace with `curl`)
+- `jq` - JSON processor
+
+## Timer Schedule
+
+- **OnBootSec=1min**: First run 1 minute after system boot
+- **OnUnitActiveSec=2min**: Subsequent runs every 2 minutes after previous completion
+
+## File Locations
+
+| Component | Location |
+|-----------|----------|
+| Script | `/usr/local/bin/cloudflare-ddns` |
+| Service Unit | `/etc/systemd/system/cloudflare-ddns.service` |
+| Timer Unit | `/etc/systemd/system/cloudflare-ddns.timer` |
+| Encrypted Credentials | `/etc/cloudflare-ddns/*` |
+
+## Maintenance
+
+### Updating Credentials
+
+1. Generate new encrypted credentials: `sudo make set-secrets`
+2. Reinstall: `sudo make install`
+3. Service will automatically use new credentials on next run
+
+### Modifying Update Frequency
+
+Edit `cloudflare-ddns.timer` and change `OnUnitActiveSec=` value:
+```bash
+sudo systemctl edit cloudflare-ddns.timer
+sudo systemctl daemon-reload
+sudo systemctl restart cloudflare-ddns.timer
+```
+
+## References
+
+- [systemd.exec - LoadCredentialEncrypted](https://www.freedesktop.org/software/systemd/man/systemd.exec.html#LoadCredentialEncrypted=ID:PATH)
+- [systemd-creds (freedesktop.org)](https://www.freedesktop.org/software/systemd/man/systemd-creds.html)
+- [systemd-creds (systemd.io)](https://systemd.io/CREDENTIALS/)
+- [Cloudflare DNS API](https://developers.cloudflare.com/api/operations/dns-records-for-a-zone-patch-dns-record)
+- [Helpful blog post](https://congrong.wang/blog/setting-up-dynamic-dns-through-cloudflare/)
