@@ -13,26 +13,26 @@ all:
 
 set-secrets:
 	@echo -n "Enter the value for CF_ZONE_ID: "
-	@read CF_ZONE_ID
-	@echo -n "$CF_ZONE_ID" systemd-creds encrypt --name=CF_ZONE_ID - CF_ZONE_ID
+	@read CF_ZONE_ID; \
+	echo -n "$$CF_ZONE_ID" | systemd-creds encrypt --name=CF_ZONE_ID - CF_ZONE_ID
 
 	@echo -n "Enter the value for CF_RECORD_ID_4: "
-	@read CF_RECORD_ID_4
-	@echo -n "$CF_RECORD_ID_4" systemd-creds encrypt --name=CF_RECORD_ID_4 - CF_RECORD_ID_4
+	@read CF_RECORD_ID_4; \
+	echo -n "$$CF_RECORD_ID_4" | systemd-creds encrypt --name=CF_RECORD_ID_4 - CF_RECORD_ID_4
 
 	@echo -n "Enter the value for CF_RECORD_ID_6: "
-	@read CF_RECORD_ID_6
-	@echo -n "$CF_RECORD_ID_6" systemd-creds encrypt --name=CF_RECORD_ID_6 - CF_RECORD_ID_6
+	@read CF_RECORD_ID_6; \
+	echo -n "$$CF_RECORD_ID_6" | systemd-creds encrypt --name=CF_RECORD_ID_6 - CF_RECORD_ID_6
 
 	@echo -n "Enter the value for CF_API_TOKEN: "
-	@read CF_API_TOKEN
-	@echo -n "$CF_API_TOKEN" systemd-creds encrypt --name=CF_API_TOKEN - CF_API_TOKEN
+	@read CF_API_TOKEN; \
+	echo -n "$$CF_API_TOKEN" | systemd-creds encrypt --name=CF_API_TOKEN - CF_API_TOKEN
 
 	@echo -n "Enter the value for IPINFO_API_TOKEN: "
-	@read IPINFO_API_TOKEN
-	@echo -n "$IPINFO_API_TOKEN" systemd-creds encrypt --name=IPINFO_API_TOKEN - IPINFO_API_TOKEN
+	@read IPINFO_API_TOKEN; \
+	echo -n "$$IPINFO_API_TOKEN" | systemd-creds encrypt --name=IPINFO_API_TOKEN - IPINFO_API_TOKEN
 
-	@echo "All secrets encrypted. You can safely delete the local secret files after running `make install`."
+	@echo "All secrets encrypted. You can safely delete the local secret files after running 'make install'."
 
 
 install:
@@ -52,7 +52,7 @@ install:
 	install -m 644 -o root -g root $(timer_src) $(timer_dest)
 
 	@echo "Service installed and started."
-	@echo "Run `sudo journalctl -u cloudflare-ddns.service` to check it's status."
+	@echo "Run 'sudo journalctl -u cloudflare-ddns.service' to check it's status."
 
 uninstall:
 	systemctl disable --now $(timer_src) || true
