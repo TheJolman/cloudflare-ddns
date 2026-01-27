@@ -1,9 +1,8 @@
 [Unit]
-Name=cloudflare-ddns
-Description=DDNS Service via Cloudflare API
+Description=Cloudflare DDNS Service
 
 [Service]
-type=oneshot
+Type=oneshot
 
 LoadCredentialEncrypted=CF_ZONE_ID:/etc/cloudflare-ddns/CF_ZONE_ID
 LoadCredentialEncrypted=CF_RECORD_ID_4:/etc/cloudflare-ddns/CF_RECORD_ID_4
