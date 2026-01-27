@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+log_error() {
+    echo "[$(date + '%Y-%m-%dT%H:%M:%S')] ERROR: $1" >&2
+}
+
+update_dns_record() {
+    local type=$1 # 'v4' | 'v6'
+    local record_id=$2
+    local current_ip
+
+    current_ip=$(xh -b --timeout 10 https://"$type".api.ipinfo.io/lite/me -A bearer --auth "$IPINFO_API_TOKEN" | jq -r .ip 2>/dev/null) || {
+        log_error "Could not fetch current WAN IP$type"
+        return 1
+    }
+
+    local resp1
+    resp1=$(xh -b GET "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/dns_records/$record_id" \
+        -A bearer --auth "$CF_API_TOKEN")
+
+    if [ "$(echo "$resp1" | jq -r .success)" != 'true' ]; then
+        log_error 'Falied to check IPv4 DNS record'
+        return 1
+    fi
+
+    local registered_ip
+    registered_ip=$(echo "$resp1" | jq -r .result.content)
+
+    if [ "$registered_ip" == "$current_ip" ]; then
+        echo "IP$type ($current_ip) is unchanged. No update needed."
+        return 0
+    fi
+
+    local resp2
+    resp2=$(xh -b PATCH "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/dns_records/$record_id" \
+        -A bearer --auth "$CF_API_TOKEN" \
+        content="$current_ip") || {
+        log_error "Failed to send PATCH request for IP$type".
+        return 1
+    }
+
+    if [ "$(echo "$resp2" | jq -r .success)" != 'true' ]; then
+        log_error "Cloudflare failed to update IP$type DNS record: $(echo "$resp2" | jq -c .errors)"
+        exit 1
+    fi
+
+    echo "IP$type ($current_ip) has changed. Record updated successfully."
+}
+
+update_dns_record 'v4' "$CF_RECORD_ID_4"
+update_dns_record 'v6' "$CF_RECORD_ID_6"

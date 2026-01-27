@@ -1,0 +1,10 @@
+[Unit]
+Description=Run cloudflare-ddns service every 2 mins
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=2min
+Unit=cloudflare-ddns.service
+
+[Install]
+WantedBy=timers.target

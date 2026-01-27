@@ -1,0 +1,14 @@
+[Unit]
+Description=DDNS Service via Cloudflare API
+
+[Service]
+type=oneshot
+
+LoadCredentialEncrypted=CF_ZONE_ID:/etc/cloudflare-ddns/cf_zone_id.cred
+LoadCredentialEncrypted=CF_RECORD_ID_4:/etc/cloudflare-ddns/cf_record_id_4.cred
+LoadCredentialEncrypted=CF_RECORD_ID_6:/etc/cloudflare-ddns/cf_record_id_4.cred
+LoadCredentialEncrypted=CF_API_TOKEN:/etc/cloudflare-ddns/cf_api_token.cred
+LoadCredentialEncrypted=IPINFO_API_TOKEN:/etc/cloudflare-ddns/ipinfo_api_token.cred
+
+ExecStart=/usr/local/bin/cloudflare-ddns
+DynamicUser=yes
