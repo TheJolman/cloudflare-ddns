@@ -58,8 +58,8 @@ uninstall:
 	systemctl disable --now $(timer_src) || true
 
 	rm -f $(bin_dest)$(script_src)
-	rm -f $(service_dest)$(service_dest)
-	rm -f $(timer_dest)$(timer_dest)
+	rm -f $(systemd_dest)$(service_src)
+	rm -f $(systemd_dest)$(timer_src)
 	rm -rf $(secret_dest)
 
 	systemctl daemon-reload
