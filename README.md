@@ -10,7 +10,7 @@ This repo contains everything you need to get a simple DDNS service running for 
    - Record ID for aforementioned `A` and `AAAA` records. You can find these with `list_records.sh` or by manually using the Cloudflare API.
    - Cloudflare zone ID for your domain (you can find this in the Cloudflare dash).
    - Cloudflare Account API token with the Zone.DNS permissions.
-   - An ipinfo.io API key (this is needed since we're grabbing both IPv4 and IPv6 IPs)
+   - An ipinfo.io API key (this is needed since we're grabbing both IPv4 and IPv6 IPs).
 1. Run `sudo make set-secrets` and paste the required variables.
 1. Run `sudo make install`.
 
@@ -47,7 +47,7 @@ Systemd's `LoadCredentialEncrypted=` directive:
    Files are copied to `/etc/cloudflare-ddns/` with restrictive permissions (600, root:root).
 
 3. **Service Start**:
-   ```
+   ```systemd
    LoadCredentialEncrypted=CF_ZONE_ID:/etc/cloudflare-ddns/CF_ZONE_ID
    ```
    Systemd decrypts and makes available at `$CREDENTIALS_DIRECTORY/CF_ZONE_ID`.
@@ -163,6 +163,13 @@ Edit `cloudflare-ddns.timer` and change `OnUnitActiveSec=` value:
 sudo systemctl edit cloudflare-ddns.timer
 sudo systemctl daemon-reload
 sudo systemctl restart cloudflare-ddns.timer
+```
+
+### Only Update IPv4
+You may wish to only expose/update your IPv4 address. In this case, you just have to delete the second function call in the main `cloudflare-ddns` script.
+```diff
+-update_dns_record 'v4' "$CF_RECORD_ID_4"
+update_dns_record 'v6' "$CF_RECORD_ID_6"
 ```
 
 ## References
