@@ -22,7 +22,8 @@ update_dns_record() {
   local record_id=$2
   local current_ip
 
-  current_ip=$(xh -b --timeout 10 https://"$type".api.ipinfo.io/lite/me -A bearer --auth "$IPINFO_API_TOKEN" | jq -r .ip 2>/dev/null) || {
+  current_ip=$(xh -b --timeout 10 https://"$type".api.ipinfo.io/lite/me -A bearer --auth "$IPINFO_API_TOKEN" |
+    jq -r .ip 2>/dev/null) || {
     log_error "Could not fetch current WAN IP$type"
     return 1
   }
@@ -31,8 +32,8 @@ update_dns_record() {
   resp1=$(xh -b GET "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/dns_records/$record_id" \
     -A bearer --auth "$CF_API_TOKEN")
 
-  if [ "$(echo "$resp1" | jq -r .success)" != 'true' ]; then
-    log_error 'Falied to check IPv4 DNS record'
+  if [ "$(jq -r .success <<<"$resp1")" != 'true' ]; then
+    log_error "Falied to check IP$type DNS record: $(echo "$resp1" | jq -r .errors)"
     return 1
   fi
 
@@ -54,11 +55,11 @@ update_dns_record() {
 
   if [ "$(echo "$resp2" | jq -r .success)" != 'true' ]; then
     log_error "Cloudflare failed to update IP$type DNS record: $(echo "$resp2" | jq -c .errors)"
-    exit 1
+    return 1
   fi
 
   echo "IP$type ($current_ip) has changed. Record updated successfully."
 }
 
-update_dns_record 'v4' "$CF_RECORD_ID_4"
-update_dns_record 'v6' "$CF_RECORD_ID_6"
+update_dns_record 'v4' "$CF_RECORD_ID_4" || exit 1
+update_dns_record 'v6' "$CF_RECORD_ID_6" || exit 1
