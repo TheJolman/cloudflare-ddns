@@ -61,8 +61,8 @@ sudo systemctl restart cloudflare-ddns.timer
 ## Only Update IPv4
 You may wish to only expose/update your IPv4 address. In this case, you just have to delete the second function call in the main `cloudflare-ddns` script.
 ```diff
--update_dns_record 'v4' "$CF_RECORD_ID_4"
-update_dns_record 'v6' "$CF_RECORD_ID_6"
+update_dns_record 'v4' "$CF_RECORD_ID_4"
+-update_dns_record 'v6' "$CF_RECORD_ID_6"
 ```
 
 ## References
