@@ -22,8 +22,8 @@ update_dns_record() {
   local record_id=$2
   local current_ip
 
-  current_ip=$(xh -b --timeout 10 https://"$type".api.ipinfo.io/lite/me -A bearer --auth "$IPINFO_API_TOKEN" |
-    jq -r .ip 2>/dev/null) || {
+  current_ip=$(xh --check-status -b --timeout 10 https://"$type".api.ipinfo.io/lite/me \
+    -A bearer --auth "$IPINFO_API_TOKEN" | jq -r .ip) || {
     log_error "Could not fetch current WAN IP$type"
     return 1
   }
@@ -33,7 +33,7 @@ update_dns_record() {
     -A bearer --auth "$CF_API_TOKEN")
 
   if [ "$(jq -r .success <<<"$resp1")" != 'true' ]; then
-    log_error "Falied to check IP$type DNS record: $(echo "$resp1" | jq -r .errors)"
+    log_error "Falied to check IP$type DNS record: $(jq -c .errors <<<"$resp1")"
     return 1
   fi
 
@@ -48,13 +48,10 @@ update_dns_record() {
   local resp2
   resp2=$(xh -b PATCH "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/dns_records/$record_id" \
     -A bearer --auth "$CF_API_TOKEN" \
-    content="$current_ip") || {
-    log_error "Failed to send PATCH request for IP$type".
-    return 1
-  }
+    content="$current_ip")
 
-  if [ "$(echo "$resp2" | jq -r .success)" != 'true' ]; then
-    log_error "Cloudflare failed to update IP$type DNS record: $(echo "$resp2" | jq -c .errors)"
+  if [ "$(jq -r .success <<<"$resp2")" != 'true' ]; then
+    log_error "Cloudflare failed to update IP$type DNS record: $(jq -c .errors <<<"$resp2")"
     return 1
   fi
 
