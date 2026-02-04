@@ -42,7 +42,7 @@ update_dns_record() {
   }
 
   local registered_ip
-  registered_ip=$(echo "$get_resp" | jq -r .result.content)
+  registered_ip=$(jq -r .result.content <<<"$get_resp")
 
   if [ "$registered_ip" == "$current_ip" ]; then
     echo "IP$type ($current_ip) is unchanged. No update needed."
