@@ -22,38 +22,43 @@ update_dns_record() {
   local record_id=$2
   local current_ip
 
-  current_ip=$(xh --check-status -b --timeout 10 https://"$type".api.ipinfo.io/lite/me \
+  # NOTE: `xh` uses the `--check-status` option by default, meaning it will exit with an error
+  #       status code on non-200 responses
+
+  current_ip=$(xh -b --timeout 10 https://"$type".api.ipinfo.io/lite/me \
     -A bearer --auth "$IPINFO_API_TOKEN" | jq -r .ip) || {
     log_error "Could not fetch current WAN IP$type"
     return 1
   }
 
-  local resp1
-  resp1=$(xh -b GET "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/dns_records/$record_id" \
-    -A bearer --auth "$CF_API_TOKEN")
+  local get_resp
+  get_resp=$(xh -b --timeout 10 GET "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/dns_records/$record_id" \
+    -A bearer --auth "$CF_API_TOKEN") || {
 
-  if [ "$(jq -r .success <<<"$resp1")" != 'true' ]; then
-    log_error "Falied to check IP$type DNS record: $(jq -c .errors <<<"$resp1")"
-    return 1
-  fi
+    if [ "$(jq -r .success <<<"$get_resp")" != 'true' ]; then
+      log_error "Falied to check IP$type DNS record: $(jq -c .errors <<<"$get_resp")"
+      return 1
+    fi
+  }
 
   local registered_ip
-  registered_ip=$(echo "$resp1" | jq -r .result.content)
+  registered_ip=$(echo "$get_resp" | jq -r .result.content)
 
   if [ "$registered_ip" == "$current_ip" ]; then
     echo "IP$type ($current_ip) is unchanged. No update needed."
     return 0
   fi
 
-  local resp2
-  resp2=$(xh -b PATCH "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/dns_records/$record_id" \
+  local patch_resp
+  patch_resp=$(xh -b --timeout 10 PATCH "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/dns_records/$record_id" \
     -A bearer --auth "$CF_API_TOKEN" \
-    content="$current_ip")
+    content="$current_ip") || {
 
-  if [ "$(jq -r .success <<<"$resp2")" != 'true' ]; then
-    log_error "Cloudflare failed to update IP$type DNS record: $(jq -c .errors <<<"$resp2")"
-    return 1
-  fi
+    if [ "$(jq -r .success <<<"$patch_resp")" != 'true' ]; then
+      log_error "Cloudflare failed to update IP$type DNS record: $(jq -c .errors <<<"$patch_resp")"
+      return 1
+    fi
+  }
 
   echo "IP$type ($current_ip) has changed. Record updated successfully."
 }
