@@ -6,6 +6,9 @@ bin_dest = /usr/local/bin/
 systemd_dest = /etc/systemd/system/
 secret_dest = /etc/cloudflare-ddns/
 
+BOLD_YELLOW := \033[1;33m
+RESET := \033[0m
+
 .PHONY: all set-secrets install uninstall format lint
 
 all:
@@ -21,7 +24,7 @@ set-secrets:
 	@echo "All secrets encrypted. You can safely delete the local secret files after running 'make install'."
 
 install:
-	# Secrets
+	@echo 'Installing secrets...'
 	install -d -m 700 /etc/cloudflare-ddns
 	install -m 600 -o root -g root CF_ZONE_ID $(secret_dest)
 	install -m 600 -o root -g root CF_RECORD_ID_4 $(secret_dest)
@@ -29,17 +32,17 @@ install:
 	install -m 600 -o root -g root CF_API_TOKEN $(secret_dest)
 	install -m 600 -o root -g root IPINFO_API_TOKEN $(secret_dest)
 
-	# Binary
+	@echo 'Installing binary...'
 	install -m 755 -o root -g root $(script_src) $(bin_dest)
 
-	# Systemd units
+	@echo 'Installing systemd units...'
 	install -m 644 -o root -g root $(service_src) $(systemd_dest)
 	install -m 644 -o root -g root $(timer_src) $(systemd_dest)
 
 	systemctl daemon-reload
 	systemctl enable --now cloudflare-ddns.timer
 	@echo "Service installed and started."
-	@echo "Run 'sudo journalctl -u cloudflare-ddns.service' to check its status."
+	@printf "Run '$(BOLD_YELLOW)sudo journalctl -u cloudflare-ddns.service -f$(RESET)' to check its status."
 
 uninstall:
 	systemctl disable --now $(timer_src) || true
