@@ -6,7 +6,7 @@ bin_dest = /usr/local/bin/
 systemd_dest = /etc/systemd/system/
 secret_dest = /etc/cloudflare-ddns/
 
-.PHONY: install uninstall
+.PHONY: all set-secrets install uninstall format lint
 
 all:
 	@echo "Usage: sudo make [ set-secrets | install | uninstall ]"
@@ -51,3 +51,9 @@ uninstall:
 
 	systemctl daemon-reload
 	@echo "Uninstalled and cleaned up."
+
+format:
+	shfmt -w --indent 2 -ci cloudflare-ddns
+
+lint:
+	shellcheck cloudflare-ddns
