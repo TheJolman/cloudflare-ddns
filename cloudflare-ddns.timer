@@ -1,9 +1,9 @@
 [Unit]
-Description=Run cloudflare-ddns service every 2 mins
+Description=Run cloudflare-ddns service every 4 mins
 
 [Timer]
 OnBootSec=1min
-OnUnitActiveSec=2min
+OnUnitActiveSec=4min
 Unit=cloudflare-ddns.service
 
 [Install]

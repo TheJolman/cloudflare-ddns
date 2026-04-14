@@ -21,14 +21,13 @@ It automatically updates your Cloudflare DNS records with your current public IP
 watch logs:
 ```bash
 sudo journalctl -u cloudflare-ddns.service -f
-systemctl status cloudflare-ddns.timer
-systemctl status cloudflare-ddns.service  # NOTE: This probably won't be active since it gets started/stopped by the timer
 ```
 
 check service status:
+> Expect the service to be inactive as it gets started/stopped by the timer
 ```bash
 systemctl status cloudflare-ddns.timer
-systemctl status cloudflare-ddns.service  # NOTE: This probably won't be active since it gets started/stopped by the timer
+systemctl status cloudflare-ddns.service
 ```
 
 ## Uninstall
@@ -46,7 +45,7 @@ sudo make uninstall
 ## Timer Schedule
 
 - **OnBootSec=1min**: First run 1 minute after system boot
-- **OnUnitActiveSec=2min**: Subsequent runs every 2 minutes after previous completion
+- **OnUnitActiveSec=4min**: Subsequent runs every 4 minutes after previous completion
 
 
 ## Modifying Update Frequency
