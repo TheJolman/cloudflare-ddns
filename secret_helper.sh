@@ -7,6 +7,6 @@ fi
 
 secret_name=$1
 
-echo -n "Enter the value for $secret_name: "
-read -r value
+read -rsp "Enter the value for $secret_name: " value
+echo
 echo -n "$value" | systemd-creds encrypt --name="$secret_name" - "$secret_name"
